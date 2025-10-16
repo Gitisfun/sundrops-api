@@ -1,1 +1,2 @@
-# sundrops-api
+# Sundrops api
+## Some details
