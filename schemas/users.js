@@ -16,11 +16,25 @@ const userSchema = yup.object({
     .max(255, 'Email must be less than 255 characters')
     .trim()
     .lowercase(),
+    
+  username: yup
+    .string()
+    .min(1, 'Username must not be empty')
+    .max(100, 'Username must be less than 100 characters')
+    .matches(
+      /^[a-zA-Z0-9_-]+$/,
+      'Username can only contain letters, numbers, hyphens (-), and underscores (_). No spaces allowed.'
+    )
+    .trim(),
+  
+  password: yup
+    .string()
+    .required('Password is required')
+    .min(8, 'Password must be at least 8 characters')
+    .max(255, 'Password must be less than 255 characters'),
   
   password_hash: yup
     .string()
-    .required('Password hash is required')
-    .min(1, 'Password hash must not be empty')
     .max(255, 'Password hash must be less than 255 characters'),
   
   first_name: yup

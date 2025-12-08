@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "migrate": "node database/migrations.js"
   },
   "repository": {
     "type": "git",
@@ -21,9 +22,12 @@
   "homepage": "https://github.com/Gitisfun/sundrops-api#readme",
   "dependencies": {
     "@supabase/supabase-js": "^2.75.0",
+    "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.16.3",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "yup": "^1.7.1"

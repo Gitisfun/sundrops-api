@@ -11,6 +11,8 @@ const router = express.Router();
  *     summary: Get all applications
  *     description: Retrieve all applications excluding soft deleted ones
  *     tags: [Applications]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: limit
@@ -80,6 +82,8 @@ router.get('/', async (req, res, next) => {
  *     summary: Get all soft deleted applications
  *     description: Retrieve all applications that have been soft deleted
  *     tags: [Applications]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: limit
@@ -149,6 +153,8 @@ router.get('/deleted', async (req, res, next) => {
  *     summary: Get application by ID
  *     description: Retrieve a specific application by its ID
  *     tags: [Applications]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -208,6 +214,8 @@ router.get('/:id', validateApplicationId, async (req, res, next) => {
  *     summary: Create a new application
  *     description: Create a new application with the provided data
  *     tags: [Applications]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -282,6 +290,8 @@ router.post('/', validateApplication, async (req, res, next) => {
  *     summary: Update an application by ID
  *     description: Partially update an existing application with the provided data
  *     tags: [Applications]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -365,6 +375,8 @@ router.patch('/:id', validateApplicationId, validateApplicationUpdate, async (re
  *     summary: Soft delete an application by ID
  *     description: Soft delete an application by setting its deleted_at timestamp
  *     tags: [Applications]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -428,6 +440,8 @@ router.delete('/:id', validateApplicationId, async (req, res, next) => {
  *     summary: Restore a soft deleted application by ID
  *     description: Restore a soft deleted application by clearing its deleted_at timestamp
  *     tags: [Applications]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -491,6 +505,8 @@ router.post('/:id/restore', validateApplicationId, async (req, res, next) => {
  *     summary: Permanently delete an application by ID
  *     description: Permanently delete an application from the database (cannot be restored)
  *     tags: [Applications]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id

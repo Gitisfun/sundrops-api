@@ -12,6 +12,10 @@ import errorHandler from "./middleware/errorHandler.js";
 import applicationsRouter from "./routes/applications.js";
 import tenantsRouter from "./routes/tenants.js";
 import usersRouter from "./routes/users.js";
+import apiKeysRouter from "./routes/apiKeys.js";
+import authenticationRouter from "./routes/authentication.js";
+import { validateApiKey } from './middleware/apiKey.js';
+import { authenticate } from './middleware/authenticate.js';  
 
 const app = express();
 const server = http.createServer(app);
@@ -22,7 +26,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-
+// Public routes (no API key required)
 app.get('/', (req, res) => {
   res.send({ 
     version: '1.0.0',
@@ -31,21 +35,29 @@ app.get('/', (req, res) => {
   });
 });
 
-// Swagger UI
+// Swagger UI (optional: protect this too if needed)
 app.use('/api/swagger', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   explorer: true,
   customCss: '.swagger-ui .topbar { display: none }',
   customSiteTitle: 'Sundrops API Documentation'
 }));
 
-// Routes
+// Apply API key validation to all subsequent routes
+app.use(validateApiKey);
+
+// Public authentication routes (no API key or JWT required)
+app.use('/api/auth', authenticationRouter);
+
+// Apply JWT authentication to all subsequent routes (except auth routes which are already registered above)
+app.use(authenticate);
+
+// Protected routes (require both API key and JWT authentication)
 app.use('/api/applications', applicationsRouter);
 app.use('/api/tenants', tenantsRouter);
 app.use('/api/users', usersRouter);
+app.use('/api/api-keys', apiKeysRouter);
 
-app.use((req, res, next) => {
-    next(ApiError.notFound("Route not found"));
-  });
+app.use((req, res, next) => next(ApiError.notFound("Route not found")));
   
 app.use(errorHandler);
 

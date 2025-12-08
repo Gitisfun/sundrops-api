@@ -1,6 +1,7 @@
 import express from 'express';
 import tenantsService from '../services/tenants.js';
 import ApiError from '../errors/errors.js';
+import { validateTenant, validateTenantUpdate, validateTenantId } from '../middleware/tenants.js';
 
 const router = express.Router();
 
@@ -11,6 +12,8 @@ const router = express.Router();
  *     summary: Get all tenants
  *     description: Retrieve all tenants excluding soft deleted ones
  *     tags: [Tenants]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: limit
@@ -80,6 +83,8 @@ router.get('/', async (req, res, next) => {
  *     summary: Get all soft deleted tenants
  *     description: Retrieve all tenants that have been soft deleted
  *     tags: [Tenants]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: limit
@@ -149,6 +154,8 @@ router.get('/deleted', async (req, res, next) => {
  *     summary: Get tenant by ID
  *     description: Retrieve a specific tenant by its ID
  *     tags: [Tenants]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -212,6 +219,8 @@ router.get('/:id', async (req, res, next) => {
  *     summary: Create a new tenant
  *     description: Create a new tenant with the provided data
  *     tags: [Tenants]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -268,13 +277,9 @@ router.get('/:id', async (req, res, next) => {
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/', async (req, res, next) => {
+router.post('/', validateTenant, async (req, res, next) => {
   try {
     const tenantData = req.body;
-
-    if (!tenantData || Object.keys(tenantData).length === 0) {
-      throw ApiError.badRequest('Tenant data is required');
-    }
 
     const newTenant = await tenantsService.create(tenantData);
     res.status(201).json({
@@ -294,6 +299,8 @@ router.post('/', async (req, res, next) => {
  *     summary: Update a tenant by ID
  *     description: Partially update an existing tenant with the provided data
  *     tags: [Tenants]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -359,14 +366,10 @@ router.post('/', async (req, res, next) => {
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.patch('/:id', async (req, res, next) => {
+router.patch('/:id', validateTenantId, validateTenantUpdate, async (req, res, next) => {
   try {
     const { id } = req.params;
     const updateData = req.body;
-
-    if (!id) {
-      throw ApiError.badRequest('Tenant ID is required');
-    }
 
     if (!updateData || Object.keys(updateData).length === 0) {
       throw ApiError.badRequest('Update data is required');
@@ -390,6 +393,8 @@ router.patch('/:id', async (req, res, next) => {
  *     summary: Soft delete a tenant by ID
  *     description: Soft delete a tenant by setting its deleted_at timestamp
  *     tags: [Tenants]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -457,6 +462,8 @@ router.delete('/:id', async (req, res, next) => {
  *     summary: Restore a soft deleted tenant by ID
  *     description: Restore a soft deleted tenant by clearing its deleted_at timestamp
  *     tags: [Tenants]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -524,6 +531,8 @@ router.post('/:id/restore', async (req, res, next) => {
  *     summary: Permanently delete a tenant by ID
  *     description: Permanently delete a tenant from the database (cannot be restored)
  *     tags: [Tenants]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -591,6 +600,8 @@ router.delete('/:id/permanent', async (req, res, next) => {
  *     summary: Get deleted tenants by application ID
  *     description: Retrieve all soft deleted tenants for a specific application
  *     tags: [Tenants]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: applicationId
@@ -679,6 +690,8 @@ router.get('/application/:applicationId/deleted', async (req, res, next) => {
  *     summary: Get tenants by application ID
  *     description: Retrieve all tenants for a specific application
  *     tags: [Tenants]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: applicationId
