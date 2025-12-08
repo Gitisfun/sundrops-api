@@ -5,6 +5,7 @@ import ApiError from '../errors/errors.js';
  * Middleware to authenticate requests using JWT token
  * Expects token in Authorization header as: Bearer <token>
  * Attaches decoded user info to req.user
+ * Skips authentication for /api/auth routes (except /api/auth/me)
  * 
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
@@ -12,6 +13,12 @@ import ApiError from '../errors/errors.js';
  */
 export const authenticate = async (req, res, next) => {
   try {
+    // Skip authentication for auth routes (login, register, change-password)
+    // Note: /api/auth/me handles its own authentication
+    if (req.path.startsWith('/api/auth') && req.path !== '/api/auth/me') {
+      return next();
+    }
+
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
