@@ -14,6 +14,8 @@ import tenantsRouter from "./routes/tenants.js";
 import usersRouter from "./routes/users.js";
 import apiKeysRouter from "./routes/apiKeys.js";
 import authenticationRouter from "./routes/authentication.js";
+import rolesRouter from "./routes/roles.js";
+import userRolesRouter from "./routes/userRoles.js";
 import { validateApiKey } from './middleware/apiKey.js';
 import { authenticate } from './middleware/authenticate.js';  
 
@@ -56,6 +58,8 @@ app.use('/api/applications', applicationsRouter);
 app.use('/api/tenants', tenantsRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/api-keys', apiKeysRouter);
+app.use('/api/roles', rolesRouter);
+app.use('/api/user-roles', userRolesRouter);
 
 app.use((req, res, next) => next(ApiError.notFound("Route not found")));
   

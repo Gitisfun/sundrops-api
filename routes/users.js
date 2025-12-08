@@ -10,7 +10,7 @@ const router = express.Router();
  * /api/users:
  *   get:
  *     summary: Get all users
- *     description: Retrieve all users excluding soft deleted ones
+ *     description: Retrieve all users excluding soft deleted ones, including their assigned roles
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
@@ -38,17 +38,41 @@ const router = express.Router();
  *         content:
  *           application/json:
  *             schema:
- *               allOf:
- *                 - $ref: '#/components/schemas/SuccessResponse'
- *                 - type: object
- *                   properties:
- *                     data:
- *                       type: array
- *                       items:
- *                         $ref: '#/components/schemas/User'
- *                     count:
- *                       type: integer
- *                       description: Number of users returned
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     allOf:
+ *                       - $ref: '#/components/schemas/User'
+ *                       - type: object
+ *                         properties:
+ *                           user_roles:
+ *                             type: array
+ *                             description: List of roles assigned to this user
+ *                             items:
+ *                               type: object
+ *                               properties:
+ *                                 id:
+ *                                   type: string
+ *                                   format: uuid
+ *                                   description: User role assignment ID
+ *                                 role_id:
+ *                                   type: string
+ *                                   format: uuid
+ *                                   description: Role ID
+ *                                 roles:
+ *                                   type: object
+ *                                   properties:
+ *                                     name:
+ *                                       type: string
+ *                                       example: "Admin"
+ *                 count:
+ *                   type: integer
+ *                   description: Number of users returned
  *       500:
  *         description: Internal server error
  *         content:
@@ -152,7 +176,7 @@ router.get('/deleted', async (req, res, next) => {
  * /api/users/{id}:
  *   get:
  *     summary: Get user by ID
- *     description: Retrieve a specific user by its ID
+ *     description: Retrieve a specific user by its ID, including their assigned roles
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
@@ -169,12 +193,36 @@ router.get('/deleted', async (req, res, next) => {
  *         content:
  *           application/json:
  *             schema:
- *               allOf:
- *                 - $ref: '#/components/schemas/SuccessResponse'
- *                 - type: object
- *                   properties:
- *                     data:
- *                       $ref: '#/components/schemas/User'
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   allOf:
+ *                     - $ref: '#/components/schemas/User'
+ *                     - type: object
+ *                       properties:
+ *                         user_roles:
+ *                           type: array
+ *                           description: List of roles assigned to this user
+ *                           items:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: string
+ *                                 format: uuid
+ *                                 description: User role assignment ID
+ *                               role_id:
+ *                                 type: string
+ *                                 format: uuid
+ *                                 description: Role ID
+ *                               roles:
+ *                                 type: object
+ *                                 properties:
+ *                                   name:
+ *                                     type: string
+ *                                     example: "Admin"
  *       400:
  *         description: Bad request - User ID is required
  *         content:
@@ -642,7 +690,7 @@ router.delete('/:id/permanent', async (req, res, next) => {
  * /api/users/tenant/{tenantId}:
  *   get:
  *     summary: Get users by tenant ID
- *     description: Retrieve all users for a specific tenant
+ *     description: Retrieve all users for a specific tenant, including their assigned roles
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
@@ -683,17 +731,41 @@ router.delete('/:id/permanent', async (req, res, next) => {
  *         content:
  *           application/json:
  *             schema:
- *               allOf:
- *                 - $ref: '#/components/schemas/SuccessResponse'
- *                 - type: object
- *                   properties:
- *                     data:
- *                       type: array
- *                       items:
- *                         $ref: '#/components/schemas/User'
- *                     count:
- *                       type: integer
- *                       description: Number of users returned
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     allOf:
+ *                       - $ref: '#/components/schemas/User'
+ *                       - type: object
+ *                         properties:
+ *                           user_roles:
+ *                             type: array
+ *                             description: List of roles assigned to this user
+ *                             items:
+ *                               type: object
+ *                               properties:
+ *                                 id:
+ *                                   type: string
+ *                                   format: uuid
+ *                                   description: User role assignment ID
+ *                                 role_id:
+ *                                   type: string
+ *                                   format: uuid
+ *                                   description: Role ID
+ *                                 roles:
+ *                                   type: object
+ *                                   properties:
+ *                                     name:
+ *                                       type: string
+ *                                       example: "Admin"
+ *                 count:
+ *                   type: integer
+ *                   description: Number of users returned
  *       400:
  *         description: Bad request - Tenant ID is required
  *         content:

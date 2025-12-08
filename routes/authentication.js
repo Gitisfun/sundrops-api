@@ -141,7 +141,7 @@ router.post('/register', validateAuth(registerSchema), async (req, res, next) =>
  * /api/auth/login:
  *   post:
  *     summary: Login a user
- *     description: Authenticate a user by email or username and password. The tenant_id is automatically extracted from the API key used for authentication.
+ *     description: Authenticate a user by email or username and password. The tenant_id is automatically extracted from the API key used for authentication. Returns user data with assigned roles (excludes password_hash, created_at, updated_at, deleted_at).
  *     tags: [Authentication]
  *     requestBody:
  *       required: true
@@ -168,19 +168,72 @@ router.post('/register', validateAuth(registerSchema), async (req, res, next) =>
  *         content:
  *           application/json:
  *             schema:
- *               allOf:
- *                 - $ref: '#/components/schemas/SuccessResponse'
- *                 - type: object
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
  *                   properties:
- *                     data:
- *                       $ref: '#/components/schemas/User'
- *                     token:
+ *                     id:
  *                       type: string
- *                       description: JWT authentication token
- *                       example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
- *                     message:
+ *                       format: uuid
+ *                       description: User ID
+ *                     tenant_id:
  *                       type: string
- *                       example: "Login successful"
+ *                       format: uuid
+ *                       description: Tenant ID
+ *                     application_id:
+ *                       type: string
+ *                       format: uuid
+ *                       description: Application ID
+ *                     email:
+ *                       type: string
+ *                       format: email
+ *                       example: "john.doe@example.com"
+ *                     username:
+ *                       type: string
+ *                       example: "johndoe"
+ *                     first_name:
+ *                       type: string
+ *                       example: "John"
+ *                     last_name:
+ *                       type: string
+ *                       example: "Doe"
+ *                     status:
+ *                       type: string
+ *                       example: "active"
+ *                     last_login_at:
+ *                       type: string
+ *                       format: date-time
+ *                     user_roles:
+ *                       type: array
+ *                       description: List of roles assigned to this user
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                             format: uuid
+ *                             description: User role assignment ID
+ *                           role_id:
+ *                             type: string
+ *                             format: uuid
+ *                             description: Role ID
+ *                           roles:
+ *                             type: object
+ *                             properties:
+ *                               name:
+ *                                 type: string
+ *                                 example: "Admin"
+ *                 token:
+ *                   type: string
+ *                   description: JWT authentication token
+ *                   example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+ *                 message:
+ *                   type: string
+ *                   example: "Login successful"
  *       400:
  *         description: Bad request - Validation failed
  *         content:
@@ -231,8 +284,8 @@ router.post('/login', validateAuth(loginSchema), async (req, res, next) => {
     // Generate JWT token
     const token = generateToken(user);
 
-    // Remove password_hash from response for security
-    const { password_hash, ...userResponse } = user;
+    // Remove sensitive and unnecessary fields from response
+    const { password_hash, created_at, updated_at, deleted_at, ...userResponse } = user;
 
     res.json({
       success: true,
@@ -250,7 +303,7 @@ router.post('/login', validateAuth(loginSchema), async (req, res, next) => {
  * /api/auth/me:
  *   get:
  *     summary: Get current user from token
- *     description: Validate JWT token from Authorization header and return current user information
+ *     description: Validate JWT token from Authorization header and return current user information with assigned roles
  *     tags: [Authentication]
  *     security:
  *       - bearerAuth: []
@@ -260,15 +313,39 @@ router.post('/login', validateAuth(loginSchema), async (req, res, next) => {
  *         content:
  *           application/json:
  *             schema:
- *               allOf:
- *                 - $ref: '#/components/schemas/SuccessResponse'
- *                 - type: object
- *                   properties:
- *                     data:
- *                       $ref: '#/components/schemas/User'
- *                     message:
- *                       type: string
- *                       example: "Token is valid"
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   allOf:
+ *                     - $ref: '#/components/schemas/User'
+ *                     - type: object
+ *                       properties:
+ *                         user_roles:
+ *                           type: array
+ *                           description: List of roles assigned to this user
+ *                           items:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: string
+ *                                 format: uuid
+ *                                 description: User role assignment ID
+ *                               role_id:
+ *                                 type: string
+ *                                 format: uuid
+ *                                 description: Role ID
+ *                               roles:
+ *                                 type: object
+ *                                 properties:
+ *                                   name:
+ *                                     type: string
+ *                                     example: "Admin"
+ *                 message:
+ *                   type: string
+ *                   example: "Token is valid"
  *       401:
  *         description: Unauthorized - Invalid or expired token, or missing Authorization header
  *         content:

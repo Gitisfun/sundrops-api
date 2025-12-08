@@ -165,10 +165,88 @@ class UsersService extends BaseService {
   }
 
   /**
+   * Get all users with their roles (excluding soft deleted)
+   * @param {Object} options - Query options (limit, offset, orderBy)
+   * @returns {Promise<Array>} Array of users with their roles
+   */
+  async getAll(options = {}) {
+    try {
+      const { limit = 100, offset = 0, orderBy = 'created_at' } = options;
+      
+      let query = dbClient
+        .from(this.tableName)
+        .select(`
+          *,
+          user_roles (
+            id,
+            role_id,
+            roles (
+              name
+            )
+          )
+        `)
+        .is('deleted_at', null)
+        .order(orderBy, { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      const { data, error } = await query;
+
+      if (error) {
+        throw ApiError.internal(`Failed to fetch users: ${error.message}`);
+      }
+
+      return data || [];
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw ApiError.internal(`Unexpected error fetching users: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get user by ID with their roles
+   * @param {string|number} id - The user ID
+   * @returns {Promise<Object>} The user with their roles
+   */
+  async getById(id) {
+    try {
+      const { data, error } = await dbClient
+        .from(this.tableName)
+        .select(`
+          *,
+          user_roles (
+            id,
+            role_id,
+            roles (
+              name
+            )
+          )
+        `)
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          throw ApiError.notFound(`User with ID ${id} not found`);
+        }
+        throw ApiError.internal(`Failed to fetch user: ${error.message}`);
+      }
+
+      return data;
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw ApiError.internal(`Unexpected error fetching user: ${error.message}`);
+    }
+  }
+
+  /**
    * Find a user by email or username and tenant ID for authentication
    * @param {string} identifier - Email or username
    * @param {string} tenantId - The tenant ID
-   * @returns {Promise<Object|null>} The user if found, null otherwise
+   * @returns {Promise<Object|null>} The user with roles if found, null otherwise
    */
   async findByEmailOrUsernameAndTenant(identifier, tenantId) {
     try {
@@ -181,7 +259,16 @@ class UsersService extends BaseService {
       const identifierLower = identifier.toLowerCase();
       let query = dbClient
         .from(this.tableName)
-        .select('*')
+        .select(`
+          *,
+          user_roles (
+            id,
+            role_id,
+            roles (
+              name
+            )
+          )
+        `)
         .eq('tenant_id', tenantId)
         .is('deleted_at', null)
         .or(`email.ilike.${identifierLower},username.ilike.${identifierLower}`)
@@ -236,7 +323,7 @@ class UsersService extends BaseService {
    * Get users by tenant ID
    * @param {string} tenantId - The tenant ID
    * @param {Object} options - Query options (limit, offset, orderBy, search)
-   * @returns {Promise<Array>} Array of users for the tenant
+   * @returns {Promise<Array>} Array of users for the tenant with their roles
    */
   async getByTenantId(tenantId, options = {}) {
     try {
@@ -244,7 +331,16 @@ class UsersService extends BaseService {
       
       let query = dbClient
         .from(this.tableName)
-        .select('*')
+        .select(`
+          *,
+          user_roles (
+            id,
+            role_id,
+            roles (
+              name
+            )
+          )
+        `)
         .eq('tenant_id', tenantId)
         .is('deleted_at', null); // Exclude soft deleted records
 
