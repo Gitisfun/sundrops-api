@@ -110,14 +110,19 @@ const validateAuth = (schema) => async (req, res, next) => {
  */
 router.post('/register', validateAuth(registerSchema), async (req, res, next) => {
   try {
-    // Get tenant_id from API key (set by validateApiKey middleware)
+    // Get tenant_id and application_id from API key (set by validateApiKey middleware)
     if (!req.tenant_id) {
       throw ApiError.badRequest('API key must be associated with a tenant');
     }
 
+    if (!req.application_id) {
+      throw ApiError.badRequest('API key must be associated with an application');
+    }
+
     const userData = {
       ...req.body,
-      tenant_id: req.tenant_id
+      tenant_id: req.tenant_id,
+      application_id: req.application_id
     };
 
     // Use the usersService.create which already handles password hashing

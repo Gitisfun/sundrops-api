@@ -60,6 +60,11 @@ export const validateApiKey = async (req, res, next) => {
       req.tenant_id = apiKeyRecord.tenant_id;
     }
 
+    // Extract and attach application_id from API key to request
+    if (apiKeyRecord.application_id) {
+      req.application_id = apiKeyRecord.application_id;
+    }
+
     // Optionally update last_used_at timestamp
     await dbClient
       .from('api_keys')
