@@ -190,6 +190,86 @@ const swaggerOptions = {
             }
           },
           required: ['id', 'email', 'password_hash', 'first_name', 'last_name', 'created_at', 'updated_at']
+        },
+        Address: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              format: 'uuid',
+              description: 'Unique identifier for the address',
+              example: '4c817926-7050-4cc3-ba54-a044bf21d3f8'
+            },
+            user_id: {
+              type: 'string',
+              format: 'uuid',
+              description: 'ID of the user this address belongs to',
+              example: '123e4567-e89b-12d3-a456-426614174000'
+            },
+            street: {
+              type: 'string',
+              description: 'Street name',
+              nullable: true,
+              example: 'Main Street'
+            },
+            house: {
+              type: 'string',
+              description: 'House number',
+              nullable: true,
+              example: '123'
+            },
+            box: {
+              type: 'string',
+              description: 'Box/Apartment number',
+              nullable: true,
+              example: 'A'
+            },
+            postalcode: {
+              type: 'string',
+              description: 'Postal code',
+              nullable: true,
+              example: '12345'
+            },
+            city: {
+              type: 'string',
+              description: 'City name',
+              nullable: true,
+              example: 'New York'
+            },
+            country: {
+              type: 'string',
+              description: 'Country name',
+              nullable: true,
+              example: 'United States'
+            },
+            isBilling: {
+              type: 'boolean',
+              description: 'Whether this is a billing address',
+              default: false,
+              example: false
+            },
+            created_at: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Creation timestamp',
+              example: '2025-10-16T18:51:21.091564+00:00'
+            },
+            updated_at: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Last update timestamp',
+              nullable: true,
+              example: '2025-10-16T18:51:21.091564+00:00'
+            },
+            deleted_at: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Soft deletion timestamp',
+              nullable: true,
+              example: null
+            }
+          },
+          required: ['id', 'user_id', 'created_at']
         }
       }
     }
