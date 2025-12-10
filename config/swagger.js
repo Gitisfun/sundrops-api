@@ -242,11 +242,55 @@ const swaggerOptions = {
               nullable: true,
               example: 'United States'
             },
-            isBilling: {
-              type: 'boolean',
-              description: 'Whether this is a billing address',
-              default: false,
-              example: false
+            type: {
+              type: 'string',
+              description: 'Address type (e.g., billing, shipping, home)',
+              nullable: true,
+              example: 'billing'
+            },
+            created_at: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Creation timestamp',
+              example: '2025-10-16T18:51:21.091564+00:00'
+            },
+            updated_at: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Last update timestamp',
+              nullable: true,
+              example: '2025-10-16T18:51:21.091564+00:00'
+            },
+            deleted_at: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Soft deletion timestamp',
+              nullable: true,
+              example: null
+            }
+          },
+          required: ['id', 'user_id', 'created_at']
+        },
+        Contact: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              format: 'uuid',
+              description: 'Unique identifier for the contact',
+              example: '4c817926-7050-4cc3-ba54-a044bf21d3f8'
+            },
+            user_id: {
+              type: 'string',
+              format: 'uuid',
+              description: 'ID of the user this contact belongs to',
+              example: '123e4567-e89b-12d3-a456-426614174000'
+            },
+            phone: {
+              type: 'string',
+              description: 'Phone number',
+              nullable: true,
+              example: '+1234567890'
             },
             created_at: {
               type: 'string',

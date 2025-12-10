@@ -17,6 +17,7 @@ import authenticationRouter from "./routes/authentication.js";
 import rolesRouter from "./routes/roles.js";
 import userRolesRouter from "./routes/userRoles.js";
 import addressesRouter from "./routes/addresses.js";
+import contactRouter from "./routes/contact.js";
 import { validateApiKey } from './middleware/apiKey.js';
 import { authenticate } from './middleware/authenticate.js';  
 
@@ -59,6 +60,7 @@ app.use('/api/applications', applicationsRouter);
 app.use('/api/tenants', tenantsRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/users/:userId/addresses', addressesRouter);
+app.use('/api/users/:userId/contact', contactRouter);
 app.use('/api/api-keys', apiKeysRouter);
 app.use('/api/roles', rolesRouter);
 app.use('/api/user-roles', userRolesRouter);

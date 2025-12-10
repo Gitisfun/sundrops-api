@@ -291,17 +291,16 @@ router.get('/:addressId', validateUserIdForAddress, validateAddressId, async (re
  *                 type: string
  *                 description: City name
  *                 example: "New York"
- *               country:
- *                 type: string
- *                 description: Country name
- *                 example: "United States"
- *               isBilling:
- *                 type: boolean
- *                 description: Whether this is a billing address
- *                 default: false
- *                 example: false
- *     responses:
- *       201:
+*               country:
+   *                 type: string
+   *                 description: Country name
+   *                 example: "United States"
+   *               type:
+   *                 type: string
+   *                 description: Address type (e.g., billing, shipping, home)
+   *                 example: "billing"
+   *     responses:
+   *       201:
  *         description: Address created successfully
  *         content:
  *           application/json:
@@ -402,17 +401,17 @@ router.post('/', validateUserIdForAddress, validateAddress, async (req, res, nex
  *                 type: string
  *                 description: City name
  *                 example: "New York"
- *               country:
- *                 type: string
- *                 description: Country name
- *                 example: "United States"
- *               isBilling:
- *                 type: boolean
- *                 description: Whether this is a billing address
- *                 example: true
- *     responses:
- *       200:
- *         description: Address updated successfully
+*               country:
+   *                 type: string
+   *                 description: Country name
+   *                 example: "United States"
+   *               type:
+   *                 type: string
+   *                 description: Address type (e.g., billing, shipping, home)
+   *                 example: "shipping"
+   *     responses:
+   *       200:
+   *         description: Address updated successfully
  *         content:
  *           application/json:
  *             schema:

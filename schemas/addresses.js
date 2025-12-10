@@ -31,9 +31,10 @@ const addressSchema = yup.object({
     .max(100, 'Country must be less than 100 characters')
     .trim(),
   
-  isBilling: yup
-    .boolean()
-    .default(false)
+  type: yup
+    .string()
+    .max(50, 'Type must be less than 50 characters')
+    .trim()
 });
 
 export default addressSchema;
