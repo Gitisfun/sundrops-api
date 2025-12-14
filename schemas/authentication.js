@@ -5,7 +5,6 @@ export const registerSchema = yup.object({
   
   email: yup
     .string()
-    .required('Email is required')
     .email('Email must be a valid email address')
     .max(255, 'Email must be less than 255 characters')
     .trim()
@@ -44,7 +43,11 @@ export const registerSchema = yup.object({
   status: yup
     .string()
     .oneOf(['active', 'inactive', 'suspended'], 'Status must be one of: active, inactive, suspended')
-});
+}).test(
+  'email-or-username',
+  'Either email or username must be provided',
+  (value) => !!(value.email || value.username)
+);
 
 // Login schema - tenant_id comes from API key, not request body
 export const loginSchema = yup.object({
