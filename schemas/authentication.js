@@ -5,6 +5,7 @@ export const registerSchema = yup.object({
   
   email: yup
     .string()
+    .optional()
     .email('Email must be a valid email address')
     .max(255, 'Email must be less than 255 characters')
     .trim()
@@ -12,7 +13,7 @@ export const registerSchema = yup.object({
     
   username: yup
     .string()
-    .min(1, 'Username must not be empty')
+    .optional()
     .max(100, 'Username must be less than 100 characters')
     .matches(
       /^[a-zA-Z0-9_-]+$/,
