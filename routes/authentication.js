@@ -270,6 +270,12 @@ router.post('/register', validateAuth(registerSchema), async (req, res, next) =>
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
+ *       403:
+ *         description: Forbidden - Email address has not been verified
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       500:
  *         description: Internal server error
  *         content:
@@ -300,6 +306,11 @@ router.post('/login', validateAuth(loginSchema), async (req, res, next) => {
 
     if (!isPasswordValid) {
       throw ApiError.unauthorized('Invalid email/username, password, or tenant');
+    }
+
+    // Check if email is verified
+    if (!user.is_verified) {
+      throw ApiError.forbidden('Email address has not been verified');
     }
 
     // Update last login timestamp
