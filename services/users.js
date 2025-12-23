@@ -413,6 +413,69 @@ class UsersService extends BaseService {
       throw ApiError.internal(`Unexpected error fetching deleted users for tenant ${tenantId}: ${error.message}`);
     }
   }
+
+  /**
+   * Find a user by email verification token
+   * @param {string} token - The email verification token
+   * @returns {Promise<Object|null>} The user if found, null otherwise
+   */
+  async findByVerificationToken(token) {
+    try {
+      if (!token) {
+        return null;
+      }
+
+      const { data, error } = await dbClient
+        .from(this.tableName)
+        .select('*')
+        .eq('email_verification_token', token)
+        .is('deleted_at', null)
+        .limit(1);
+
+      if (error) {
+        throw ApiError.internal(`Failed to find user by verification token: ${error.message}`);
+      }
+
+      return data && data.length > 0 ? data[0] : null;
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw ApiError.internal(`Unexpected error finding user by verification token: ${error.message}`);
+    }
+  }
+
+  /**
+   * Verify a user's email address
+   * @param {string} userId - The user ID
+   * @returns {Promise<Object>} The updated user
+   */
+  async verifyEmail(userId) {
+    try {
+      const { data, error } = await dbClient
+        .from(this.tableName)
+        .update({
+          is_verified: true,
+          email_verification_token: null,
+          email_verification_expires: null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId)
+        .select()
+        .single();
+
+      if (error) {
+        throw ApiError.internal(`Failed to verify email: ${error.message}`);
+      }
+
+      return data;
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw ApiError.internal(`Unexpected error verifying email: ${error.message}`);
+    }
+  }
 }
 
 export default new UsersService();
