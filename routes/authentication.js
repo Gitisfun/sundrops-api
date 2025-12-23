@@ -1,4 +1,5 @@
 import express from 'express';
+import crypto from 'crypto';
 import usersService from '../services/users.js';
 import ApiError from '../errors/errors.js';
 import { registerSchema, loginSchema, changePasswordSchema } from '../schemas/authentication.js';
@@ -82,7 +83,7 @@ const validateAuth = (schema) => async (req, res, next) => {
  *                 example: "active"
  *     responses:
  *       201:
- *         description: User registered successfully
+ *         description: User registered successfully. User is created with is_verified=false and an email verification token is generated (valid for 24 hours).
  *         content:
  *           application/json:
  *             schema:
@@ -91,7 +92,18 @@ const validateAuth = (schema) => async (req, res, next) => {
  *                 - type: object
  *                   properties:
  *                     data:
- *                       $ref: '#/components/schemas/User'
+ *                       allOf:
+ *                         - $ref: '#/components/schemas/User'
+ *                         - type: object
+ *                           properties:
+ *                             is_verified:
+ *                               type: boolean
+ *                               description: Whether the user's email has been verified
+ *                               example: false
+ *                             email_verification_expires:
+ *                               type: string
+ *                               format: date-time
+ *                               description: When the email verification token expires
  *                     message:
  *                       type: string
  *                       example: "User registered successfully"
@@ -119,17 +131,24 @@ router.post('/register', validateAuth(registerSchema), async (req, res, next) =>
       throw ApiError.badRequest('API key must be associated with an application');
     }
 
+    // Generate email verification token and expiration (24 hours from now)
+    const emailVerificationToken = crypto.randomBytes(32).toString('hex');
+    const emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
     const userData = {
       ...req.body,
       tenant_id: req.tenant_id,
-      application_id: req.application_id
+      application_id: req.application_id,
+      is_verified: false,
+      email_verification_token: emailVerificationToken,
+      email_verification_expires: emailVerificationExpires
     };
 
     // Use the usersService.create which already handles password hashing
     const newUser = await usersService.create(userData);
     
-    // Remove password_hash from response for security
-    const { password_hash, ...userResponse } = newUser;
+    // Remove password_hash and verification token from response for security
+    const { password_hash, email_verification_token, ...userResponse } = newUser;
 
     res.status(201).json({
       success: true,
@@ -521,6 +540,108 @@ router.post('/change-password', validateAuth(changePasswordSchema), async (req, 
       success: true,
       data: userResponse,
       message: 'Password changed successfully'
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * @swagger
+ * /api/auth/verify-email:
+ *   post:
+ *     summary: Verify user email address
+ *     description: Verify a user's email address using the verification token sent during registration. The token is valid for 24 hours after registration.
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - token
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 description: The email verification token
+ *                 example: "a1b2c3d4e5f6..."
+ *     responses:
+ *       200:
+ *         description: Email verified successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   allOf:
+ *                     - $ref: '#/components/schemas/User'
+ *                     - type: object
+ *                       properties:
+ *                         is_verified:
+ *                           type: boolean
+ *                           example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Email verified successfully"
+ *       400:
+ *         description: Bad request - Token is required or invalid
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       410:
+ *         description: Gone - Verification token has expired
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.post('/verify-email', async (req, res, next) => {
+  try {
+    const { token } = req.body;
+
+    if (!token) {
+      throw ApiError.badRequest('Verification token is required');
+    }
+
+    // Find user by verification token
+    const user = await usersService.findByVerificationToken(token);
+
+    if (!user) {
+      throw ApiError.badRequest('Invalid verification token');
+    }
+
+    // Check if user is already verified
+    if (user.is_verified) {
+      throw ApiError.badRequest('Email is already verified');
+    }
+
+    // Check if token has expired
+    if (user.email_verification_expires && new Date(user.email_verification_expires) < new Date()) {
+      throw ApiError.gone('Verification token has expired');
+    }
+
+    // Verify the user's email
+    const verifiedUser = await usersService.verifyEmail(user.id);
+
+    // Remove sensitive fields from response
+    const { password_hash, email_verification_token, ...userResponse } = verifiedUser;
+
+    res.json({
+      success: true,
+      data: userResponse,
+      message: 'Email verified successfully'
     });
   } catch (error) {
     next(error);

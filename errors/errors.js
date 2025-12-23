@@ -19,6 +19,10 @@ class ApiError {
     static notFound(message) {
       return new ApiError(404, message);
     }
+
+    static gone(message) {
+      return new ApiError(410, message);
+    }
   
     static internal(message) {
       return new ApiError(500, message);

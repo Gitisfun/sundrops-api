@@ -14,10 +14,12 @@ export const registerSchema = yup.object({
   username: yup
     .string()
     .optional()
+    .nullable()
+    .transform((value) => (value === '' ? undefined : value))
     .max(100, 'Username must be less than 100 characters')
     .matches(
       /^[a-zA-Z0-9_-]+$/,
-      'Username can only contain letters, numbers, hyphens (-), and underscores (_). No spaces allowed.'
+      { excludeEmptyString: true, message: 'Username can only contain letters, numbers, hyphens (-), and underscores (_). No spaces allowed.' }
     )
     .trim(),
   
