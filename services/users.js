@@ -476,6 +476,38 @@ class UsersService extends BaseService {
       throw ApiError.internal(`Unexpected error verifying email: ${error.message}`);
     }
   }
+
+  /**
+   * Get email verification details for a user by email and tenant
+   * @param {string} email - The user's email address
+   * @param {string} tenantId - The tenant ID
+   * @returns {Promise<Object>} Object containing verification token and expiration
+   */
+  async getVerificationTokenByEmail(email, tenantId) {
+    try {
+      const { data, error } = await dbClient
+        .from(this.tableName)
+        .select('id, email, tenant_id, is_verified, email_verification_token, email_verification_expires')
+        .ilike('email', email)
+        .eq('tenant_id', tenantId)
+        .is('deleted_at', null)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          throw ApiError.notFound(`User with email ${email} not found`);
+        }
+        throw ApiError.internal(`Failed to get verification token: ${error.message}`);
+      }
+
+      return data;
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw ApiError.internal(`Unexpected error getting verification token: ${error.message}`);
+    }
+  }
 }
 
 export default new UsersService();

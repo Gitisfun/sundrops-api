@@ -659,5 +659,104 @@ router.post('/verify-email', async (req, res, next) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/auth/verification-token/{email}:
+ *   get:
+ *     summary: Get email verification token by email address
+ *     description: Retrieve the email verification token and expiration for a user by their email address. The tenant_id is automatically extracted from the API key. Useful for resending verification emails.
+ *     tags: [Authentication]
+ *     parameters:
+ *       - in: path
+ *         name: email
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: email
+ *         description: The user's email address
+ *     responses:
+ *       200:
+ *         description: Verification token retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                       format: uuid
+ *                     email:
+ *                       type: string
+ *                       format: email
+ *                     is_verified:
+ *                       type: boolean
+ *                       example: false
+ *                     email_verification_token:
+ *                       type: string
+ *                       description: The verification token (null if already verified)
+ *                     email_verification_expires:
+ *                       type: string
+ *                       format: date-time
+ *                       description: When the verification token expires (null if already verified)
+ *                 message:
+ *                   type: string
+ *                   example: "Verification token retrieved successfully"
+ *       400:
+ *         description: Bad request - Email is required or user is already verified
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.get('/verification-token/:email', async (req, res, next) => {
+  try {
+    // Get tenant_id from API key (set by validateApiKey middleware)
+    if (!req.tenant_id) {
+      throw ApiError.badRequest('API key must be associated with a tenant');
+    }
+
+    const { email } = req.params;
+    const tenant_id = req.tenant_id;
+
+    if (!email) {
+      throw ApiError.badRequest('Email is required');
+    }
+
+    // Get verification token details by email and tenant
+    const verificationData = await usersService.getVerificationTokenByEmail(email, tenant_id);
+
+    // Check if user is already verified
+    if (verificationData.is_verified) {
+      throw ApiError.badRequest('User email is already verified');
+    }
+
+    res.json({
+      success: true,
+      data: verificationData,
+      message: 'Verification token retrieved successfully'
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;
 
