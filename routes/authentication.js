@@ -708,13 +708,19 @@ router.post('/verify-email', async (req, res, next) => {
  *                   type: string
  *                   example: "Verification token retrieved successfully"
  *       400:
- *         description: Bad request - Email is required or user is already verified
+ *         description: Bad request - Email is required
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
  *       404:
  *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       409:
+ *         description: Conflict - User email is already verified
  *         content:
  *           application/json:
  *             schema:
@@ -745,7 +751,7 @@ router.get('/verification-token/:email', async (req, res, next) => {
 
     // Check if user is already verified
     if (verificationData.is_verified) {
-      throw ApiError.badRequest('User email is already verified');
+      throw ApiError.conflict('User email is already verified');
     }
 
     res.json({
