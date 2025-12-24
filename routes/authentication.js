@@ -764,5 +764,202 @@ router.get('/verification-token/:email', async (req, res, next) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/auth/password-reset-token:
+ *   post:
+ *     summary: Request a password reset token
+ *     description: Generate a password reset token for a user by their email address. The token is valid for 1 hour. The tenant_id is automatically extracted from the API key.
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: The user's email address
+ *                 example: "john.doe@example.com"
+ *     responses:
+ *       200:
+ *         description: Password reset token generated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     email:
+ *                       type: string
+ *                       format: email
+ *                     password_reset_token:
+ *                       type: string
+ *                       description: The password reset token to be sent to the user
+ *                     password_reset_expires:
+ *                       type: string
+ *                       format: date-time
+ *                       description: When the password reset token expires
+ *                 message:
+ *                   type: string
+ *                   example: "Password reset token generated successfully"
+ *       400:
+ *         description: Bad request - Email is required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.post('/password-reset-token', async (req, res, next) => {
+  try {
+    // Get tenant_id from API key (set by validateApiKey middleware)
+    if (!req.tenant_id) {
+      throw ApiError.badRequest('API key must be associated with a tenant');
+    }
+
+    const { email } = req.body;
+    const tenant_id = req.tenant_id;
+
+    if (!email) {
+      throw ApiError.badRequest('Email is required');
+    }
+
+    // Generate password reset token and expiration (1 hour from now)
+    const passwordResetToken = crypto.randomBytes(32).toString('hex');
+    const passwordResetExpires = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+
+    // Set password reset token for the user
+    const result = await usersService.setPasswordResetToken(email, tenant_id, passwordResetToken, passwordResetExpires);
+
+    res.json({
+      success: true,
+      data: result,
+      message: 'Password reset token generated successfully'
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * @swagger
+ * /api/auth/reset-password:
+ *   post:
+ *     summary: Reset password using token
+ *     description: Reset a user's password using a valid password reset token. The token must not be expired.
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - token
+ *               - new_password
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 description: The password reset token
+ *                 example: "a1b2c3d4e5f6..."
+ *               new_password:
+ *                 type: string
+ *                 format: password
+ *                 description: The new password (minimum 8 characters)
+ *                 example: "NewSecurePassword123!"
+ *     responses:
+ *       200:
+ *         description: Password reset successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Password reset successfully"
+ *       400:
+ *         description: Bad request - Token and new password are required, or invalid token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       410:
+ *         description: Gone - Password reset token has expired
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.post('/reset-password', async (req, res, next) => {
+  try {
+    const { token, new_password } = req.body;
+
+    if (!token) {
+      throw ApiError.badRequest('Password reset token is required');
+    }
+
+    if (!new_password) {
+      throw ApiError.badRequest('New password is required');
+    }
+
+    if (new_password.length < 8) {
+      throw ApiError.badRequest('New password must be at least 8 characters');
+    }
+
+    // Find user by password reset token
+    const user = await usersService.findByPasswordResetToken(token);
+
+    if (!user) {
+      throw ApiError.badRequest('Invalid password reset token');
+    }
+
+    // Check if token has expired
+    if (user.password_reset_expires && new Date(user.password_reset_expires) < new Date()) {
+      throw ApiError.gone('Password reset token has expired');
+    }
+
+    // Reset the password
+    await usersService.resetPassword(user.id, new_password);
+
+    res.json({
+      success: true,
+      message: 'Password reset successfully'
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;
 

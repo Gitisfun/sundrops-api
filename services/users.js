@@ -508,6 +508,113 @@ class UsersService extends BaseService {
       throw ApiError.internal(`Unexpected error getting verification token: ${error.message}`);
     }
   }
+
+  /**
+   * Set password reset token for a user by email and tenant
+   * @param {string} email - The user's email address
+   * @param {string} tenantId - The tenant ID
+   * @param {string} token - The password reset token
+   * @param {string} expires - The token expiration timestamp
+   * @returns {Promise<Object>} The updated user data
+   */
+  async setPasswordResetToken(email, tenantId, token, expires) {
+    try {
+      const { data, error } = await dbClient
+        .from(this.tableName)
+        .update({
+          password_reset_token: token,
+          password_reset_expires: expires,
+          updated_at: new Date().toISOString()
+        })
+        .ilike('email', email)
+        .eq('tenant_id', tenantId)
+        .is('deleted_at', null)
+        .select('id, email, password_reset_token, password_reset_expires')
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          throw ApiError.notFound(`User with email ${email} not found`);
+        }
+        throw ApiError.internal(`Failed to set password reset token: ${error.message}`);
+      }
+
+      return data;
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw ApiError.internal(`Unexpected error setting password reset token: ${error.message}`);
+    }
+  }
+
+  /**
+   * Find a user by password reset token
+   * @param {string} token - The password reset token
+   * @returns {Promise<Object|null>} The user if found, null otherwise
+   */
+  async findByPasswordResetToken(token) {
+    try {
+      if (!token) {
+        return null;
+      }
+
+      const { data, error } = await dbClient
+        .from(this.tableName)
+        .select('*')
+        .eq('password_reset_token', token)
+        .is('deleted_at', null)
+        .limit(1);
+
+      if (error) {
+        throw ApiError.internal(`Failed to find user by password reset token: ${error.message}`);
+      }
+
+      return data && data.length > 0 ? data[0] : null;
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw ApiError.internal(`Unexpected error finding user by password reset token: ${error.message}`);
+    }
+  }
+
+  /**
+   * Reset user password and clear reset token
+   * @param {string} userId - The user ID
+   * @param {string} newPassword - The new password (will be hashed)
+   * @returns {Promise<Object>} The updated user
+   */
+  async resetPassword(userId, newPassword) {
+    try {
+      // Hash the new password
+      const saltRounds = 10;
+      const password_hash = await bcrypt.hash(newPassword, saltRounds);
+
+      const { data, error } = await dbClient
+        .from(this.tableName)
+        .update({
+          password_hash,
+          password_reset_token: null,
+          password_reset_expires: null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId)
+        .select()
+        .single();
+
+      if (error) {
+        throw ApiError.internal(`Failed to reset password: ${error.message}`);
+      }
+
+      return data;
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw ApiError.internal(`Unexpected error resetting password: ${error.message}`);
+    }
+  }
 }
 
 export default new UsersService();
